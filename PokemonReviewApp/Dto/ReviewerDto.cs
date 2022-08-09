@@ -1,11 +1,8 @@
-﻿using PokemonReviewApp.Models;
+﻿namespace PokemonReviewApp.Dto;
 
-namespace PokemonReviewApp.Dto
+public class ReviewerDto
 {
-    public class ReviewerDto
-    {
-        public int Id { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-    }
+    public int Id { get; set; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
 }
