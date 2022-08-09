@@ -3,95 +3,94 @@ using PokemonReviewApp.Dto;
 using PokemonReviewApp.Interfaces;
 using PokemonReviewApp.Models;
 
-namespace PokemonReviewApp.Repository
+namespace PokemonReviewApp.Repository;
+
+public class PokemonRepository : IPokemonRepository
 {
-    public class PokemonRepository : IPokemonRepository
+    private readonly DataContext _context;
+
+    public PokemonRepository(DataContext context)
     {
-        private readonly DataContext _context;
+        _context = context;
+    }
 
-        public PokemonRepository(DataContext context)
+    public bool CreatePokemon(int ownerId, int categoryId, Pokemon pokemon)
+    {
+        var pokemonOwnerEntity = _context.Owners.Where(a => a.Id == ownerId).FirstOrDefault();
+        var category = _context.Categories.Where(a => a.Id == categoryId).FirstOrDefault();
+
+        var pokemonOwner = new PokemonOwner()
         {
-            _context = context;
-        }
+            Owner = pokemonOwnerEntity,
+            Pokemon = pokemon,
+        };
 
-        public bool CreatePokemon(int ownerId, int categoryId, Pokemon pokemon)
+        _context.Add(pokemonOwner);
+
+        var pokemonCategory = new PokemonCategory()
         {
-            var pokemonOwnerEntity = _context.Owners.Where(a => a.Id == ownerId).FirstOrDefault();
-            var category = _context.Categories.Where(a => a.Id == categoryId).FirstOrDefault();
+            Category = category,
+            Pokemon = pokemon,
+        };
 
-            var pokemonOwner = new PokemonOwner()
-            {
-                Owner = pokemonOwnerEntity,
-                Pokemon = pokemon,
-            };
+        _context.Add(pokemonCategory);
 
-            _context.Add(pokemonOwner);
+        _context.Add(pokemon);
 
-            var pokemonCategory = new PokemonCategory()
-            {
-                Category = category,
-                Pokemon = pokemon,
-            };
+        return Save();
+    }
 
-            _context.Add(pokemonCategory);
+    public bool DeletePokemon(Pokemon pokemon)
+    {
+        _context.Remove(pokemon);
+        return Save();
+    }
 
-            _context.Add(pokemon);
+    public Pokemon GetPokemon(int id)
+    {
+        return _context.Pokemon.Where(p => p.Id == id).FirstOrDefault();
+    }
 
-            return Save();
-        }
+    public Pokemon GetPokemon(string name)
+    {
+        return _context.Pokemon.Where(p => p.Name == name).FirstOrDefault();
+    }
 
-        public bool DeletePokemon(Pokemon pokemon)
-        {
-            _context.Remove(pokemon);
-            return Save();
-        }
+    public decimal GetPokemonRating(int pokeId)
+    {
+        var review = _context.Reviews.Where(p => p.Pokemon.Id == pokeId);
 
-        public Pokemon GetPokemon(int id)
-        {
-            return _context.Pokemon.Where(p => p.Id == id).FirstOrDefault();
-        }
+        if (review.Count() <= 0)
+            return 0;
 
-        public Pokemon GetPokemon(string name)
-        {
-            return _context.Pokemon.Where(p => p.Name == name).FirstOrDefault();
-        }
+        return ((decimal)review.Sum(r => r.Rating) / review.Count());
+    }
 
-        public decimal GetPokemonRating(int pokeId)
-        {
-            var review = _context.Reviews.Where(p => p.Pokemon.Id == pokeId);
+    public ICollection<Pokemon> GetPokemons()
+    {
+        return _context.Pokemon.OrderBy(p => p.Id).ToList();
+    }
 
-            if (review.Count() <= 0)
-                return 0;
+    public Pokemon GetPokemonTrimToUpper(PokemonDto pokemonCreate)
+    {
+        return GetPokemons().Where(c => c.Name.Trim().ToUpper() == pokemonCreate.Name.TrimEnd().ToUpper())
+            .FirstOrDefault();
+    }
 
-            return ((decimal)review.Sum(r => r.Rating) / review.Count());
-        }
+    public bool PokemonExists(int pokeId)
+    {
+        return _context.Pokemon.Any(p => p.Id == pokeId);
+    }
 
-        public ICollection<Pokemon> GetPokemons()
-        {
-            return _context.Pokemon.OrderBy(p => p.Id).ToList();
-        }
+    public bool Save()
+    {
+        var saved = _context.SaveChanges();
+        return saved > 0;
+    }
 
-        public Pokemon GetPokemonTrimToUpper(PokemonDto pokemonCreate)
-        {
-            return GetPokemons().Where(c => c.Name.Trim().ToUpper() == pokemonCreate.Name.TrimEnd().ToUpper())
-                .FirstOrDefault();
-        }
-
-        public bool PokemonExists(int pokeId)
-        {
-            return _context.Pokemon.Any(p => p.Id == pokeId);
-        }
-
-        public bool Save()
-        {
-            var saved = _context.SaveChanges();
-            return saved > 0 ? true : false;
-        }
-
-        public bool UpdatePokemon(int ownerId, int categoryId, Pokemon pokemon)
-        {
-            _context.Update(pokemon);
-            return Save();
-        }
+    public bool UpdatePokemon(int ownerId, int categoryId, Pokemon pokemon)
+    {
+        _context.Update(pokemon);
+        return Save();
     }
 }
