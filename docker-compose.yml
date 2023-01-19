@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  pokemonreviewapp:
+    image: ${DOCKER_REGISTRY-}pokemonreviewapp
+    build:
+      context: .
+      dockerfile: PokemonReviewApp/Dockerfile
